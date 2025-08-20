@@ -1,27 +1,22 @@
 // models/User.js
-const { DataTypes } = require('sequelize');
-const sequelize = require('../config/db');
+const mongoose = require('mongoose');
+const { Schema } = mongoose;
 
-const User = sequelize.define('User', {
-  id: {
-    type: DataTypes.INTEGER.UNSIGNED,
-    autoIncrement: true,
-    primaryKey: true,
-  },
-  name: { type: DataTypes.STRING(150), allowNull: true },
-  email: { type: DataTypes.STRING(191), allowNull: false, unique: true },
-  passwordHash: { type: DataTypes.STRING(255), allowNull: false },
-  role: { type: DataTypes.STRING(30), allowNull: false, defaultValue: 'user' },
-  age: { type: DataTypes.INTEGER, allowNull: true },
-  gender: { type: DataTypes.STRING(20), allowNull: true },
-  height: { type: DataTypes.INTEGER, allowNull: true }, // cm
-  weight: { type: DataTypes.INTEGER, allowNull: true }, // kg
-  goal: { type: DataTypes.TEXT, allowNull: true },      // có thể JSON.stringify([...])
-  createdAt: { type: DataTypes.DATE, allowNull: false, defaultValue: DataTypes.NOW },
-  status: { type: DataTypes.STRING(20), allowNull: false, defaultValue: 'pending' }, // pending | active
+const userSchema = new Schema({
+  name: { type: String, maxLength: 150 },
+  email: { type: String, required: true, unique: true, maxLength: 191 },
+  passwordHash: { type: String, required: true },
+  role: { type: String, required: true, default: 'user', maxLength: 30 },
+  age: { type: Number },
+  gender: { type: String, maxLength: 20 },
+  height: { type: Number }, // cm
+  weight: { type: Number }, // kg
+  goal: { type: String },   // có thể JSON.stringify([...])
+  status: { type: String, required: true, default: 'pending', maxLength: 20 }, // pending | active
 }, {
-  tableName: 'Users',
-  updatedAt: 'updatedAt',
+  timestamps: true // tự động tạo createdAt và updatedAt
 });
+
+const User = mongoose.model('User', userSchema);
 
 module.exports = User;

@@ -21,7 +21,7 @@ const createUserResponse = (user) => {
   }
   
   return {
-    id: user.id,
+    id: user._id,
     name: user.name,
     email: user.email,
     age: user.age,
@@ -53,9 +53,7 @@ exports.getUserProfile = async (req, res) => {
   try {
     const userId = req.user.sub;
     
-    const user = await User.findByPk(userId, {
-      attributes: ['id', 'name', 'email', 'age', 'gender', 'height', 'weight', 'goal', 'createdAt', 'status']
-    });
+    const user = await User.findById(userId);
     
     if (!user) {
       return res.status(404).json({ message: 'Không tìm thấy thông tin người dùng' });
@@ -71,13 +69,18 @@ exports.getUserProfile = async (req, res) => {
 exports.updateUserProfile = async (req, res) => {
   try {
     const userId = req.user.sub;
-    const user = await User.findByPk(userId);
+    const user = await User.findById(userId);
     
     if (!user) {
       return res.status(404).json({ message: 'Không tìm thấy thông tin người dùng' });
     }
     
-    await user.update(prepareUpdateData(req.body));
+    const updateData = prepareUpdateData(req.body);
+    Object.keys(updateData).forEach(key => {
+      user[key] = updateData[key];
+    });
+    
+    await user.save();
     
     return res.json({ 
       message: 'Cập nhật thông tin thành công',
@@ -97,7 +100,25 @@ exports.completeUserProfile = async (req, res) => {
       return res.status(400).json({ message: 'Thiếu thông tin người dùng' });
     }
     
-    const user = await User.findByPk(userId);
+    // Kiểm tra và xử lý userId để đảm bảo là ObjectId hợp lệ
+    const mongoose = require('mongoose');
+    let userObjectId;
+    
+    try {
+      // Nếu userId là một chuỗi hợp lệ, chuyển đổi thành ObjectId
+      if (mongoose.Types.ObjectId.isValid(userId)) {
+        userObjectId = new mongoose.Types.ObjectId(userId);
+      } else {
+        console.error('Invalid userId format:', userId);
+        return res.status(400).json({ message: 'ID người dùng không hợp lệ' });
+      }
+    } catch (idError) {
+      console.error('Error converting userId to ObjectId:', idError);
+      return res.status(400).json({ message: 'ID người dùng không hợp lệ' });
+    }
+    
+    // Tìm user bằng ObjectId đã xác thực
+    const user = await User.findById(userObjectId);
     
     if (!user) {
       return res.status(404).json({ message: 'Không tìm thấy thông tin người dùng' });
@@ -107,10 +128,15 @@ exports.completeUserProfile = async (req, res) => {
       return res.status(403).json({ message: 'Tài khoản chưa được xác thực OTP' });
     }
     
-    await user.update(prepareUpdateData(req.body));
+    const updateData = prepareUpdateData(req.body);
+    Object.keys(updateData).forEach(key => {
+      user[key] = updateData[key];
+    });
+    
+    await user.save();
     
     const token = jwt.sign(
-      { sub: user.id, role: user.role },
+      { sub: user._id, role: user.role },
       process.env.JWT_SECRET,
       { expiresIn: '7d' }
     );
@@ -121,6 +147,7 @@ exports.completeUserProfile = async (req, res) => {
       user: createUserResponse(user)
     });
   } catch (error) {
+    console.error('Complete profile error details:', error);
     return handleError(res, error, 'Lỗi khi hoàn tất thông tin hồ sơ');
   }
 };

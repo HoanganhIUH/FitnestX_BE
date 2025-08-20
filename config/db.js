@@ -1,28 +1,25 @@
 require('dotenv').config();
-const { Sequelize } = require('sequelize');
-
-const sequelize = new Sequelize(
-  process.env.DB_NAME,
-  process.env.DB_USER,
-  process.env.DB_PASS,
-  {
-    host: process.env.DB_HOST,
-    port: process.env.DB_PORT,
-    dialect: 'mysql',
-    logging: false,
-    dialectModule: require('mysql2'),
-  }
-);
+const mongoose = require('mongoose');
 
 async function connectDB() {
   try {
-    await sequelize.authenticate();
-    console.log('✅ Connected to MySQL Database:', process.env.DB_NAME);
+    const mongoUri = process.env.MONGODB_URI;
+    
+    if (!mongoUri) {
+      throw new Error('MONGODB_URI is not defined in environment variables');
+    }
+    
+    await mongoose.connect(mongoUri, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true
+    });
+    console.log('✅ Connected to MongoDB Atlas');
   } catch (error) {
-    console.error('❌ Unable to connect to the database:', error);
+    console.error('❌ Unable to connect to MongoDB Atlas:', error);
+    process.exit(1); // Thoát ứng dụng nếu không thể kết nối database
   }
 }
 
 connectDB();
 
-module.exports = sequelize;
+module.exports = mongoose;

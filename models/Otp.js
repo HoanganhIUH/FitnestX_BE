@@ -1,16 +1,16 @@
 // models/Otp.js
-const { DataTypes } = require('sequelize');
-const sequelize = require('../config/db');
+const mongoose = require('mongoose');
+const { Schema } = mongoose;
 
-const Otp = sequelize.define('Otp', {
-  id: { type: DataTypes.INTEGER.UNSIGNED, autoIncrement: true, primaryKey: true },
-  email: { type: DataTypes.STRING(191), allowNull: false },
-  code: { type: DataTypes.STRING(6), allowNull: false },
-  expiresAt: { type: DataTypes.DATE, allowNull: false },
-  consumed: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: false },
+const otpSchema = new Schema({
+  email: { type: String, required: true, maxLength: 191 },
+  code: { type: String, required: true, maxLength: 6 },
+  expiresAt: { type: Date, required: true },
+  consumed: { type: Boolean, required: true, default: false },
 }, {
-  tableName: 'Otps',
-  timestamps: true,
+  timestamps: true // tự động tạo createdAt và updatedAt
 });
+
+const Otp = mongoose.model('Otp', otpSchema);
 
 module.exports = Otp;
